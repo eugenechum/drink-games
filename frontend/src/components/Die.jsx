@@ -22,9 +22,12 @@ export default function Die({ value, hidden, held, onClick, size = "w-9 h-9" }) 
       type="button"
       disabled={!onClick}
       onClick={onClick}
-      className={`die-face relative ${size} transition-transform ${
-        held ? "bg-chip-red/25 ring-4 ring-chip-red scale-110" : ""
-      } ${onClick ? "cursor-pointer" : "cursor-default"}`}
+      className={`die-face relative ${size} ${onClick ? "cursor-pointer" : "cursor-default"}`}
+      style={
+        held
+          ? { backgroundColor: "rgba(179, 18, 44, 0.3)", boxShadow: "0 0 0 4px #b3122c" }
+          : undefined
+      }
     >
       {hidden ? (
         <span className="absolute inset-0 flex items-center justify-center text-lg font-bold">?</span>

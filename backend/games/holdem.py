@@ -167,14 +167,14 @@ class HoldemGame:
     def _raise(self, pid: str, action: dict) -> None:
         to_amount = action.get("to")
         if not isinstance(to_amount, int) or to_amount <= self.current_bet:
-            raise ValueError("Raise must be higher than the current bet.")
+            raise ValueError(f"Minimum raise is {self.current_bet + self.min_raise}.")
         max_possible = self.committed_street[pid] + self.stacks[pid]
         if to_amount > max_possible:
-            raise ValueError("You don't have enough chips for that raise.")
+            raise ValueError(f"You only have {max_possible} chips available.")
         raise_size = to_amount - self.current_bet
         is_all_in = to_amount == max_possible
         if raise_size < self.min_raise and not is_all_in:
-            raise ValueError(f"Raise must be at least {self.min_raise} more than the current bet.")
+            raise ValueError(f"Minimum raise is {self.current_bet + self.min_raise}.")
 
         pay = to_amount - self.committed_street[pid]
         self.stacks[pid] -= pay

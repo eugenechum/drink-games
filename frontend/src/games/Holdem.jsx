@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { nameOf } from "../lib/players.js";
 
-function Card({ label }) {
+function Card({ label, size = "normal" }) {
   const isRed = label.includes("♥") || label.includes("♦");
+  const dims = size === "small" ? "w-8 h-11 text-sm" : "w-10 h-14 text-lg";
   return (
-    <div className={`card-face w-10 h-14 flex items-center justify-center font-bold text-lg ${isRed ? "text-red-600" : ""}`}>
+    <div className={`card-face ${dims} flex items-center justify-center font-bold ${isRed ? "text-red-600" : ""}`}>
       {label}
     </div>
   );
 }
 
 export default function Holdem({ state, players, you, send }) {
-  const [raiseTo, setRaiseTo] = useState(0);
+  const [raiseTo, setRaiseTo] = useState("");
   const isBetting = ["preflop", "flop", "turn", "river"].includes(state.phase);
   const isYourTurn = isBetting && state.current_turn === you.id;
   const me = state.players.find((p) => p.id === you.id);
@@ -21,6 +22,12 @@ export default function Holdem({ state, players, you, send }) {
 
   function act(action) {
     send({ type: "game_action", action });
+  }
+
+  function raise() {
+    const amount = Number(raiseTo);
+    if (!amount) return;
+    act({ type: "raise", to: amount });
   }
 
   function endGame() {
@@ -55,9 +62,9 @@ export default function Holdem({ state, players, you, send }) {
         ))}
       </div>
 
-      <div className="flex flex-wrap justify-center gap-3">
+      <div className="flex flex-wrap justify-center gap-4">
         {state.players.map((p) => (
-          <PlayerSeat key={p.id} p={p} state={state} players={players} you={you} send={send} />
+          <PlayerSeat key={p.id} p={p} state={state} players={players} you={you} />
         ))}
       </div>
 
@@ -91,14 +98,13 @@ export default function Holdem({ state, players, you, send }) {
             <div className="flex items-center gap-2">
               <input
                 type="number"
-                min={Math.min(minRaiseTo, maxRaise)}
-                max={maxRaise}
-                value={raiseTo || minRaiseTo}
-                onChange={(e) => setRaiseTo(Number(e.target.value))}
-                className="w-24 rounded px-2 py-2 bg-black/30 border border-amber-100/30 text-amber-100"
+                placeholder={`min ${minRaiseTo}`}
+                value={raiseTo}
+                onChange={(e) => setRaiseTo(e.target.value)}
+                className="w-24 rounded px-2 py-2 bg-black/30 border border-amber-100/30 text-amber-100 placeholder:text-amber-100/40"
               />
               <button
-                onClick={() => act({ type: "raise", to: Math.min(Math.max(raiseTo || minRaiseTo, minRaiseTo), maxRaise) })}
+                onClick={raise}
                 className="bg-chip-red hover:bg-chip-redDark transition text-white font-semibold px-4 py-2 rounded-lg"
               >
                 Raise
@@ -211,36 +217,41 @@ function ResultsPanel({ state, players, you, send }) {
   );
 }
 
+// Zynga-style seat: cards up top, a compact name/chip plaque anchored below them.
 function PlayerSeat({ p, state, players, you }) {
   const isTurn = state.current_turn === p.id;
   const isButton = state.button === p.id;
   const hole = state.hole_cards?.[p.id];
+
   return (
-    <div
-      className={`px-3 py-2 rounded-xl border text-center min-w-[110px] ${
-        isTurn ? "border-chip-red bg-chip-red/20" : "border-amber-100/20"
-      } ${p.folded ? "opacity-40" : ""}`}
-    >
-      <div className="text-amber-100 text-sm">
-        {nameOf(players, p.id)} {isButton && "🔘"} {p.id === you.id && "(you)"}
+    <div className={`flex flex-col items-center gap-1 ${p.folded ? "opacity-40" : ""}`}>
+      <div className="flex gap-1 h-11">
+        {hole
+          ? hole.map((c, i) => <Card key={i} label={c} size="small" />)
+          : p.in_hand && (
+              <>
+                <div className="card-face w-8 h-11 opacity-30" />
+                <div className="card-face w-8 h-11 opacity-30" />
+              </>
+            )}
       </div>
-      <div className="text-amber-100/60 text-xs">
-        {p.busted ? "busted" : `${p.stack} chips`}
-      </div>
-      {p.committed_street > 0 && (
-        <div className="text-chip-red text-xs">bet {p.committed_street}</div>
-      )}
-      {p.folded && <div className="text-amber-100/40 text-xs">folded</div>}
-      {p.all_in && !p.folded && <div className="text-amber-100/40 text-xs">all-in</div>}
-      {hole && (
-        <div className="flex gap-1 justify-center mt-1">
-          {hole.map((c, i) => (
-            <span key={i} className="text-amber-100 text-xs">
-              {c}
-            </span>
-          ))}
+      <div
+        className={`rounded-lg px-3 py-1.5 border text-center min-w-[110px] ${
+          isTurn ? "border-chip-red bg-chip-red/20" : "border-amber-100/20 bg-black/30"
+        }`}
+      >
+        <div className="text-amber-100 text-sm font-semibold whitespace-nowrap">
+          {nameOf(players, p.id)} {isButton && "🔘"} {p.id === you.id && "(you)"}
         </div>
-      )}
+        <div className="text-amber-100 text-base font-bold">
+          {p.busted ? "busted" : `${p.stack}`}
+        </div>
+        {p.committed_street > 0 && (
+          <div className="text-chip-red text-xs font-semibold">bet {p.committed_street}</div>
+        )}
+        {p.folded && <div className="text-amber-100/50 text-xs">folded</div>}
+        {p.all_in && !p.folded && <div className="text-amber-100/50 text-xs">all-in</div>}
+      </div>
     </div>
   );
 }
