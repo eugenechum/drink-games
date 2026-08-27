@@ -24,7 +24,7 @@ played in a room a host creates and others join via QR code or 4-digit code.
 - **Host**: plays as a participant, not just a moderator.
 - **Players**: up to 8 per room, same cap across all three games.
 
-## Status: built, tested, not yet deployed
+## Status: built, tested, deployed
 
 - Backend game logic (`backend/games/`) covered by `pytest` (34 tests):
   Liar's Dice bidding/elimination, Poker Dice hand ranking/tie-breaks,
@@ -34,9 +34,14 @@ played in a room a host creates and others join via QR code or 4-digit code.
   per this workspace's QA preference. Chip conservation verified through a
   full Hold'em hand (no chips created/destroyed across betting + showdown).
 - `npm run build` passes for the frontend.
-- **Not yet verified**: the actual UI in a browser (casino styling, QR scan
-  flow, mobile layout) — do a manual pass before treating this as fully done.
-- **Not yet deployed** to Substrait — no database declared (intentional).
+- UI verified live in the browser (casino styling, room/lobby flow, all three
+  games played to completion with real gameplay) — see 2026-08-27 session.
+- **Deployed** to Substrait via the GitHub-connected flow: repo
+  `eugenechum/drink-games`, slug `drink-games`, live at
+  drink-games.ninjavan.apps.substrait.build. No database declared (intentional).
+- **Not yet checked**: real-device QR scanning (only verified the QR encodes
+  the right join URL, not an actual phone-camera scan) and true multi-device
+  play (all verification so far used bot scripts or same-browser tabs).
 
 ## Known simplifications (acceptable for a casual party app)
 
