@@ -57,13 +57,13 @@ class RoomInfoOut(BaseModel):
 
 
 @app.post("/api/rooms", response_model=RoomJoinOut)
-def create_room(body: CreateRoomIn):
+async def create_room(body: CreateRoomIn):
     room, player = store.create_room(body.host_name)
     return {"code": room.code, "player_id": player.id, "player_name": player.name}
 
 
 @app.post("/api/rooms/{code}/join", response_model=RoomJoinOut)
-def join_room(code: str, body: JoinRoomIn):
+async def join_room(code: str, body: JoinRoomIn):
     try:
         room, player = store.join_room(code, body.name)
     except ValueError as e:
@@ -72,7 +72,7 @@ def join_room(code: str, body: JoinRoomIn):
 
 
 @app.get("/api/rooms/{code}", response_model=RoomInfoOut)
-def room_info(code: str):
+async def room_info(code: str):
     room = store.get_room(code)
     if room is None:
         return {"exists": False}
