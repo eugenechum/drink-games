@@ -1,0 +1,163 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Drink Games",
+    "description": "Party game app: create a room, join by 4-digit code, then play Liar's Dice, Poker Dice, or Texas Hold'em over a WebSocket. Real-time game state is exchanged over a WebSocket at /api/ws/{code} (not representable in OpenAPI), not these REST endpoints.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Readiness probe used by the platform.",
+        "responses": {
+          "200": {
+            "description": "Backend is up.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Health" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rooms": {
+      "post": {
+        "summary": "Create a new room and register its host player.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateRoomIn" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Room created; returns the 4-digit room code and the host's player id.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RoomJoinOut" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rooms/{code}/join": {
+      "post": {
+        "summary": "Join an existing room as a new player.",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "pattern": "^[0-9]{4}$" },
+            "description": "4-digit room code."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/JoinRoomIn" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Joined the room; returns the new player's id.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RoomJoinOut" }
+              }
+            }
+          },
+          "400": {
+            "description": "Room not found, already started, or full.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rooms/{code}": {
+      "get": {
+        "summary": "Look up a room's basic status before joining (exists, player count, whether a game has started).",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "pattern": "^[0-9]{4}$" },
+            "description": "4-digit room code."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Room status.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RoomInfoOut" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "example": "ok" }
+        },
+        "required": ["status"]
+      },
+      "CreateRoomIn": {
+        "type": "object",
+        "properties": {
+          "host_name": { "type": "string", "description": "Display name of the host, who also becomes a player." }
+        },
+        "required": ["host_name"]
+      },
+      "JoinRoomIn": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Display name of the joining player." }
+        },
+        "required": ["name"]
+      },
+      "RoomJoinOut": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "description": "4-digit room code." },
+          "player_id": { "type": "string", "description": "Opaque id this player uses to open the room's WebSocket and to rejoin later." },
+          "player_name": { "type": "string" }
+        },
+        "required": ["code", "player_id", "player_name"]
+      },
+      "RoomInfoOut": {
+        "type": "object",
+        "properties": {
+          "exists": { "type": "boolean" },
+          "player_count": { "type": "integer" },
+          "max_players": { "type": "integer", "example": 8 },
+          "started": { "type": "boolean", "description": "Whether a game is currently in progress in this room." }
+        },
+        "required": ["exists"]
+      },
+      "HTTPError": {
+        "type": "object",
+        "properties": {
+          "detail": { "type": "string" }
+        },
+        "required": ["detail"]
+      }
+    }
+  }
+}
