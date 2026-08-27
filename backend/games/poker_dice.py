@@ -44,8 +44,11 @@ class PokerDiceGame:
         self.dice: dict[str, list[int]] = {pid: [0] * 5 for pid in self.order}
         self.rolls_used = {pid: 0 for pid in self.order}
         self.done = {pid: False for pid in self.order}
-        self.phase = "rolling"  # "rolling" | "revealed"
+        self.phase = "rolling"  # "rolling" | "revealed" | "game_over"
         self.last_result: dict | None = None
+        self.wins = {pid: 0 for pid in self.order}
+        self.losses = {pid: 0 for pid in self.order}
+        self.forced_end = False
 
     def apply_action(self, player_id: str, action: dict) -> None:
         if player_id not in self.order:
@@ -95,6 +98,11 @@ class PokerDiceGame:
             "losers": [pid for pid, s in scores.items() if s == worst],
         }
         self.phase = "revealed"
+        if best != worst:
+            for pid in self.last_result["winners"]:
+                self.wins[pid] += 1
+            for pid in self.last_result["losers"]:
+                self.losses[pid] += 1
 
     def start_next_round(self) -> None:
         if self.phase != "revealed":
@@ -105,6 +113,12 @@ class PokerDiceGame:
         self.phase = "rolling"
         self.last_result = None
 
+    def force_end(self) -> None:
+        if self.phase == "game_over":
+            raise ValueError("Game is already over.")
+        self.forced_end = True
+        self.phase = "game_over"
+
     def to_public_state(self, viewer_id: str) -> dict:
         return {
             "game": self.game_type,
@@ -114,10 +128,13 @@ class PokerDiceGame:
                     "id": pid,
                     "rolls_used": self.rolls_used[pid],
                     "done": self.done[pid],
+                    "wins": self.wins[pid],
+                    "losses": self.losses[pid],
                 }
                 for pid in self.order
             ],
             "your_dice": self.dice.get(viewer_id, [0] * 5),
             "your_rolls_used": self.rolls_used.get(viewer_id, 0),
             "last_result": self.last_result,
+            "forced_end": self.forced_end,
         }

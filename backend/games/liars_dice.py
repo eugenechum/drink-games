@@ -27,6 +27,8 @@ class LiarsDiceGame:
         self.phase = "bidding"  # "bidding" | "revealed" | "game_over"
         self.last_result: dict | None = None
         self.winner: str | None = None
+        self.rounds_lost = {pid: 0 for pid in self.order}
+        self.forced_end = False
         self._roll_all()
 
     def _active_players(self) -> list[str]:
@@ -102,6 +104,7 @@ class LiarsDiceGame:
         loser = player_id if bid_was_true else self.bidder
 
         self.dice_count[loser] -= 1
+        self.rounds_lost[loser] += 1
         eliminated = self.dice_count[loser] == 0
 
         self.last_result = {
@@ -131,12 +134,19 @@ class LiarsDiceGame:
         self._roll_all()
         self._advance_turn_from(loser)
 
+    def force_end(self) -> None:
+        if self.phase == "game_over":
+            raise ValueError("Game is already over.")
+        self.forced_end = True
+        self.phase = "game_over"
+
     def to_public_state(self, viewer_id: str) -> dict:
         return {
             "game": self.game_type,
             "phase": self.phase,
             "players": [
-                {"id": pid, "dice_count": self.dice_count[pid]} for pid in self.order
+                {"id": pid, "dice_count": self.dice_count[pid], "rounds_lost": self.rounds_lost[pid]}
+                for pid in self.order
             ],
             "current_turn": self.current_turn(),
             "current_bid": self.current_bid,
@@ -144,4 +154,5 @@ class LiarsDiceGame:
             "your_dice": self.dice_values.get(viewer_id, []),
             "last_result": self.last_result,
             "winner": self.winner,
+            "forced_end": self.forced_end,
         }

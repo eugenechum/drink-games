@@ -1,13 +1,6 @@
 import { useState } from "react";
+import Die from "../components/Die.jsx";
 import { nameOf } from "../lib/players.js";
-
-function Die({ value, hidden }) {
-  return (
-    <div className="die-face w-9 h-9 flex items-center justify-center text-lg font-bold">
-      {hidden ? "?" : value}
-    </div>
-  );
-}
 
 export default function LiarsDice({ state, players, you, send }) {
   const [qty, setQty] = useState(1);
@@ -15,6 +8,7 @@ export default function LiarsDice({ state, players, you, send }) {
 
   const isYourTurn = state.current_turn === you.id;
   const totalDice = state.players.reduce((sum, p) => sum + p.dice_count, 0);
+  const gameOver = state.phase === "game_over";
 
   function bid(e) {
     e.preventDefault();
@@ -25,49 +19,72 @@ export default function LiarsDice({ state, players, you, send }) {
     send({ type: "game_action", action: { type: "call_liar" } });
   }
 
+  function endGame() {
+    if (window.confirm("End this game now for everyone?")) {
+      send({ type: "end_game" });
+    }
+  }
+
   return (
     <div className="felt-table rounded-2xl p-6 w-full max-w-2xl flex flex-col gap-6">
-      <h2 className="font-display text-2xl text-amber-100 text-center">Liar's Dice</h2>
-
-      <div className="flex flex-wrap justify-center gap-3">
-        {state.players.map((p) => (
-          <div
-            key={p.id}
-            className={`px-4 py-2 rounded-xl border ${
-              state.current_turn === p.id ? "border-chip-red bg-chip-red/20" : "border-amber-100/20"
-            }`}
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-2xl text-amber-100">Liar's Dice</h2>
+        {you.is_host && !gameOver && (
+          <button
+            onClick={endGame}
+            className="text-amber-100/50 hover:text-amber-100 text-xs border border-amber-100/30 rounded px-2 py-1"
           >
-            <div className="text-amber-100 text-sm mb-1">{nameOf(players, p.id)}</div>
-            <div className="flex gap-1">
-              {Array.from({ length: p.dice_count }).map((_, i) => (
-                <Die key={i} hidden />
+            End Game
+          </button>
+        )}
+      </div>
+
+      {!gameOver && (
+        <>
+          <div className="flex flex-wrap justify-center gap-3">
+            {state.players.map((p) => (
+              <div
+                key={p.id}
+                className={`px-4 py-2 rounded-xl border ${
+                  state.current_turn === p.id ? "border-chip-red bg-chip-red/20" : "border-amber-100/20"
+                }`}
+              >
+                <div className="text-amber-100 text-sm mb-1">
+                  {nameOf(players, p.id)}{" "}
+                  <span className="text-amber-100/40 text-xs">({p.rounds_lost} lost)</span>
+                </div>
+                <div className="flex gap-1">
+                  {Array.from({ length: p.dice_count }).map((_, i) => (
+                    <Die key={i} hidden />
+                  ))}
+                  {p.dice_count === 0 && <span className="text-amber-100/30 text-xs">out</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center text-amber-100">
+            {state.current_bid ? (
+              <p>
+                Current bid: <b>{state.current_bid.qty}</b> × face <b>{state.current_bid.face}</b>
+                {state.current_bid.face === 1 && " (wild)"}
+              </p>
+            ) : (
+              <p className="text-amber-100/60">No bid yet — {nameOf(players, state.current_turn)} opens.</p>
+            )}
+            <p className="text-amber-100/50 text-sm">{totalDice} dice in play</p>
+          </div>
+
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-amber-100/70 text-sm">Your dice</p>
+            <div className="flex gap-2">
+              {state.your_dice.map((v, i) => (
+                <Die key={i} value={v} />
               ))}
-              {p.dice_count === 0 && <span className="text-amber-100/30 text-xs">out</span>}
             </div>
           </div>
-        ))}
-      </div>
-
-      <div className="text-center text-amber-100">
-        {state.current_bid ? (
-          <p>
-            Current bid: <b>{state.current_bid.qty}</b> × face <b>{state.current_bid.face}</b>
-            {state.current_bid.face === 1 && " (wild)"}
-          </p>
-        ) : (
-          <p className="text-amber-100/60">No bid yet — {nameOf(players, state.current_turn)} opens.</p>
-        )}
-        <p className="text-amber-100/50 text-sm">{totalDice} dice in play</p>
-      </div>
-
-      <div className="flex flex-col items-center gap-2">
-        <p className="text-amber-100/70 text-sm">Your dice</p>
-        <div className="flex gap-2">
-          {state.your_dice.map((v, i) => (
-            <Die key={i} value={v} />
-          ))}
-        </div>
-      </div>
+        </>
+      )}
 
       {state.phase === "bidding" && isYourTurn && (
         <form onSubmit={bid} className="flex flex-wrap items-end justify-center gap-3">
@@ -117,25 +134,15 @@ export default function LiarsDice({ state, players, you, send }) {
         </p>
       )}
 
-      {state.phase !== "bidding" && state.last_result && (
+      {state.phase === "revealed" && state.last_result && (
         <RevealPanel result={state.last_result} players={players} />
       )}
 
-      {state.winner && (
-        <div className="text-center">
-          <p className="text-amber-100 text-xl mb-3">🏆 {nameOf(players, state.winner)} wins!</p>
-          {you.is_host && (
-            <button
-              onClick={() => send({ type: "back_to_lobby" })}
-              className="bg-chip-red hover:bg-chip-redDark transition text-white font-semibold px-4 py-2 rounded-lg"
-            >
-              Back to Game Picker
-            </button>
-          )}
-        </div>
+      {gameOver && (
+        <ResultsPanel state={state} players={players} you={you} send={send} />
       )}
 
-      {state.phase === "revealed" && !state.winner && you.is_host && (
+      {state.phase === "revealed" && !gameOver && you.is_host && (
         <div className="text-center">
           <button
             onClick={() => send({ type: "next_round" })}
@@ -172,6 +179,47 @@ function RevealPanel({ result, players }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function ResultsPanel({ state, players, you, send }) {
+  const ranked = [...state.players].sort((a, b) => b.dice_count - a.dice_count || a.rounds_lost - b.rounds_lost);
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <p className="text-amber-100 text-xl">
+        {state.winner
+          ? `🏆 ${nameOf(players, state.winner)} wins!`
+          : "Game ended early"}
+      </p>
+      <div className="bg-black/30 rounded-xl p-4 w-full max-w-sm">
+        <table className="w-full text-amber-100 text-sm">
+          <thead>
+            <tr className="text-amber-100/50 text-left">
+              <th className="pb-2">Player</th>
+              <th className="pb-2 text-center">Dice left</th>
+              <th className="pb-2 text-center">Rounds lost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ranked.map((p) => (
+              <tr key={p.id}>
+                <td className="py-1">{nameOf(players, p.id)}</td>
+                <td className="py-1 text-center">{p.dice_count}</td>
+                <td className="py-1 text-center">{p.rounds_lost}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {you.is_host && (
+        <button
+          onClick={() => send({ type: "back_to_lobby" })}
+          className="bg-chip-red hover:bg-chip-redDark transition text-white font-semibold px-4 py-2 rounded-lg"
+        >
+          Back to Game Picker
+        </button>
+      )}
     </div>
   );
 }

@@ -59,6 +59,29 @@ def test_max_three_rolls_auto_stands():
         game.apply_action("a", {"type": "roll", "keep": [True] * 5})
 
 
+def test_win_loss_tally_after_reveal():
+    game = PokerDiceGame(["a", "b"])
+    game.apply_action("a", {"type": "roll"})
+    game.apply_action("a", {"type": "stand"})
+    game.dice["a"] = [6, 6, 6, 6, 6]
+    game.apply_action("b", {"type": "roll"})
+    game.dice["b"] = [1, 2, 3, 4, 5]
+    game.apply_action("b", {"type": "stand"})
+    assert game.wins["a"] == 1
+    assert game.losses["b"] == 1
+    assert game.wins["b"] == 0
+    assert game.losses["a"] == 0
+
+
+def test_force_end_marks_game_over():
+    game = PokerDiceGame(["a", "b"])
+    game.force_end()
+    assert game.phase == "game_over"
+    assert game.forced_end is True
+    with pytest.raises(ValueError):
+        game.force_end()
+
+
 def test_start_next_round_resets_state():
     game = PokerDiceGame(["a", "b"])
     for pid in ("a", "b"):

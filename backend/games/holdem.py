@@ -21,7 +21,9 @@ class HoldemGame:
     def __init__(self, player_ids: list[str]):
         self.seats = list(player_ids)  # fixed seating order, stable across busts/rebuys
         self.stacks = {pid: STARTING_STACK for pid in self.seats}
+        self.total_buyin = {pid: STARTING_STACK for pid in self.seats}
         self.buyins_open = True
+        self.forced_end = False
         self.button_pid: str | None = None
         self.hand_number = 0
         self.phase = "hand_complete"  # trigger start_next_hand() to deal hand #1
@@ -314,6 +316,20 @@ class HoldemGame:
         if self.phase not in ("hand_complete",):
             raise ValueError("Wait for the current hand to finish.")
         self.stacks[player_id] = STARTING_STACK
+        self.total_buyin[player_id] += STARTING_STACK
+
+    def force_end(self) -> None:
+        if self.phase == "game_over":
+            raise ValueError("Game is already over.")
+        if self.phase in ("preflop", "flop", "turn", "river"):
+            # No fair way to award an in-progress pot — return each player's
+            # current-hand chips rather than arbitrarily picking a winner.
+            for pid in self.in_hand:
+                self.stacks[pid] += self.total_committed.get(pid, 0)
+            self.total_committed = {pid: 0 for pid in self.in_hand}
+        self.forced_end = True
+        self.phase = "game_over"
+        self.winner = None
 
     def to_public_state(self, viewer_id: str) -> dict:
         reveal_all = self.phase in ("hand_complete", "game_over")
@@ -336,6 +352,7 @@ class HoldemGame:
                 {
                     "id": pid,
                     "stack": self.stacks[pid],
+                    "total_buyin": self.total_buyin[pid],
                     "committed_street": self.committed_street.get(pid, 0),
                     "folded": pid in self.folded,
                     "all_in": pid in self.all_in,
@@ -348,4 +365,5 @@ class HoldemGame:
             "hole_cards": hole,
             "last_result": self.last_result,
             "winner": self.winner,
+            "forced_end": self.forced_end,
         }

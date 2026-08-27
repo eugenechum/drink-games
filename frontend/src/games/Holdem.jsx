@@ -23,13 +23,29 @@ export default function Holdem({ state, players, you, send }) {
     send({ type: "game_action", action });
   }
 
+  function endGame() {
+    if (window.confirm("End this game now for everyone? Any hand in progress will be refunded.")) {
+      send({ type: "end_game" });
+    }
+  }
+
   return (
     <div className="felt-table rounded-2xl p-6 w-full max-w-3xl flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-2xl text-amber-100">Texas Hold'em</h2>
-        <span className="text-amber-100/50 text-sm">
-          Hand #{state.hand_number} · Pot {state.pot}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-amber-100/50 text-sm">
+            Hand #{state.hand_number} · Pot {state.pot}
+          </span>
+          {you.is_host && state.phase !== "game_over" && (
+            <button
+              onClick={endGame}
+              className="text-amber-100/50 hover:text-amber-100 text-xs border border-amber-100/30 rounded px-2 py-1"
+            >
+              End Game
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex justify-center gap-2">
@@ -142,17 +158,54 @@ export default function Holdem({ state, players, you, send }) {
       )}
 
       {state.phase === "game_over" && (
-        <div className="text-center">
-          <p className="text-amber-100 text-xl mb-3">🏆 {nameOf(players, state.winner)} takes the table!</p>
-          {you.is_host && (
-            <button
-              onClick={() => send({ type: "back_to_lobby" })}
-              className="bg-chip-red hover:bg-chip-redDark transition text-white font-semibold px-4 py-2 rounded-lg"
-            >
-              Back to Game Picker
-            </button>
-          )}
-        </div>
+        <ResultsPanel state={state} players={players} you={you} send={send} />
+      )}
+    </div>
+  );
+}
+
+function ResultsPanel({ state, players, you, send }) {
+  const ranked = [...state.players].sort((a, b) => b.stack - a.stack);
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <p className="text-amber-100 text-xl">
+        {state.winner ? `🏆 ${nameOf(players, state.winner)} takes the table!` : "Game ended early"}
+      </p>
+      <div className="bg-black/30 rounded-xl p-4 w-full max-w-sm">
+        <table className="w-full text-amber-100 text-sm">
+          <thead>
+            <tr className="text-amber-100/50 text-left">
+              <th className="pb-2">Player</th>
+              <th className="pb-2 text-center">Bought in</th>
+              <th className="pb-2 text-center">Cashed out</th>
+              <th className="pb-2 text-center">Net</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ranked.map((p) => {
+              const net = p.stack - p.total_buyin;
+              return (
+                <tr key={p.id}>
+                  <td className="py-1">{nameOf(players, p.id)}</td>
+                  <td className="py-1 text-center">{p.total_buyin}</td>
+                  <td className="py-1 text-center">{p.stack}</td>
+                  <td className={`py-1 text-center ${net > 0 ? "text-green-400" : net < 0 ? "text-chip-red" : ""}`}>
+                    {net > 0 ? "+" : ""}
+                    {net}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {you.is_host && (
+        <button
+          onClick={() => send({ type: "back_to_lobby" })}
+          className="bg-chip-red hover:bg-chip-redDark transition text-white font-semibold px-4 py-2 rounded-lg"
+        >
+          Back to Game Picker
+        </button>
       )}
     </div>
   );

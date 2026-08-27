@@ -175,6 +175,10 @@ async def handle_message(room: Room, player_id: str, message: dict) -> None:
         if room.game_type != "holdem":
             raise ValueError("Rebuying only applies to Hold'em.")
         room.game.rebuy(player_id)
+    elif msg_type == "end_game":
+        if not player.is_host:
+            raise ValueError("Only the host can end the game.")
+        room.game.force_end()
     elif msg_type == "close_buyins":
         if not player.is_host:
             raise ValueError("Only the host can close buy-ins.")

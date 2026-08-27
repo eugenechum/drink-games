@@ -80,3 +80,26 @@ def test_out_of_turn_action_rejected():
     game = make_game()
     with pytest.raises(ValueError):
         game.apply_action("b", {"type": "bid", "qty": 1, "face": 1})
+
+
+def test_rounds_lost_tally_increments_on_each_resolution():
+    game = make_game()
+    game.apply_action("a", {"type": "bid", "qty": 5, "face": 6})
+    game.apply_action("b", {"type": "call_liar"})  # bid true -> caller "b" loses
+    assert game.rounds_lost["b"] == 1
+    assert game.rounds_lost["a"] == 0
+
+
+def test_force_end_marks_game_over_without_a_winner():
+    game = make_game()
+    game.force_end()
+    assert game.phase == "game_over"
+    assert game.forced_end is True
+    assert game.winner is None
+
+
+def test_force_end_twice_raises():
+    game = make_game()
+    game.force_end()
+    with pytest.raises(ValueError):
+        game.force_end()

@@ -129,6 +129,50 @@ def test_full_heads_up_hand_preserves_total_chips():
     assert sum(game.stacks.values()) == 2000
 
 
+def test_total_buyin_tracks_initial_stack_and_rebuys():
+    game, (a, b) = _game_with_players(1000, 1000)
+    assert game.total_buyin[a] == 1000
+    game.phase = "hand_complete"
+    game.stacks[a] = 0
+    game.rebuy(a)
+    assert game.total_buyin[a] == 2000
+    game.stacks[a] = 0
+    game.rebuy(a)
+    assert game.total_buyin[a] == 3000
+
+
+def test_force_end_between_hands_keeps_stacks_untouched():
+    game, (a, b) = _game_with_players(700, 1300)
+    game.phase = "hand_complete"
+    game.force_end()
+    assert game.phase == "game_over"
+    assert game.forced_end is True
+    assert game.winner is None
+    assert game.stacks == {a: 700, b: 1300}
+
+
+def test_force_end_mid_hand_refunds_current_hand_chips():
+    game, (a, b) = _game_with_players(1000, 1000)
+    game.start_next_hand()
+    assert game.phase == "preflop"
+    stacks_before = dict(game.stacks)
+    committed_before = dict(game.total_committed)
+
+    game.force_end()
+
+    assert game.phase == "game_over"
+    for pid in (a, b):
+        assert game.stacks[pid] == stacks_before[pid] + committed_before.get(pid, 0)
+    assert sum(game.stacks.values()) == 2000
+
+
+def test_force_end_twice_raises():
+    game, (a, b) = _game_with_players(1000, 1000)
+    game.force_end()
+    with pytest.raises(ValueError):
+        game.force_end()
+
+
 def test_all_in_runs_out_remaining_streets_without_more_betting():
     game, (a, b) = _game_with_players(1000, 1000)
     game.start_next_hand()

@@ -1,27 +1,13 @@
 import { useEffect, useState } from "react";
+import Die from "../components/Die.jsx";
 import { nameOf } from "../lib/players.js";
-
-const FACE_LABEL = { 1: "9", 2: "10", 3: "J", 4: "Q", 5: "K", 6: "A" };
-
-function Die({ value, held, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`die-face w-12 h-12 flex items-center justify-center text-xl font-bold ${
-        held ? "ring-4 ring-chip-red" : ""
-      } ${onClick ? "cursor-pointer" : "cursor-default"}`}
-    >
-      {FACE_LABEL[value] ?? "?"}
-    </button>
-  );
-}
 
 export default function PokerDice({ state, players, you, send }) {
   const [held, setHeld] = useState([false, false, false, false, false]);
   const you_ = state.players.find((p) => p.id === you.id);
   const rollsUsed = state.your_rolls_used;
   const done = you_?.done;
+  const gameOver = state.phase === "game_over";
 
   useEffect(() => {
     if (rollsUsed === 0) setHeld([false, false, false, false, false]);
@@ -40,31 +26,52 @@ export default function PokerDice({ state, players, you, send }) {
     send({ type: "game_action", action: { type: "stand" } });
   }
 
+  function endGame() {
+    if (window.confirm("End this game now for everyone?")) {
+      send({ type: "end_game" });
+    }
+  }
+
   return (
     <div className="felt-table rounded-2xl p-6 w-full max-w-2xl flex flex-col gap-6">
-      <h2 className="font-display text-2xl text-amber-100 text-center">Poker Dice</h2>
-
-      <div className="flex flex-wrap justify-center gap-3">
-        {state.players.map((p) => (
-          <div key={p.id} className="px-4 py-2 rounded-xl border border-amber-100/20 text-center">
-            <div className="text-amber-100 text-sm">{nameOf(players, p.id)}</div>
-            <div className="text-amber-100/50 text-xs">
-              {p.done ? "done" : `${p.rolls_used}/3 rolls`}
-            </div>
-          </div>
-        ))}
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-2xl text-amber-100">Poker Dice</h2>
+        {you.is_host && !gameOver && (
+          <button
+            onClick={endGame}
+            className="text-amber-100/50 hover:text-amber-100 text-xs border border-amber-100/30 rounded px-2 py-1"
+          >
+            End Game
+          </button>
+        )}
       </div>
+
+      {!gameOver && (
+        <div className="flex flex-wrap justify-center gap-3">
+          {state.players.map((p) => (
+            <div key={p.id} className="px-4 py-2 rounded-xl border border-amber-100/20 text-center">
+              <div className="text-amber-100 text-sm">{nameOf(players, p.id)}</div>
+              <div className="text-amber-100/50 text-xs">
+                {p.done ? "done" : `${p.rolls_used}/3 rolls`}
+              </div>
+              <div className="text-amber-100/40 text-xs">
+                {p.wins}W - {p.losses}L
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {state.phase === "rolling" && (
         <div className="flex flex-col items-center gap-4">
           <div className="flex gap-2">
             {state.your_dice.map((v, i) =>
               rollsUsed === 0 ? (
-                <div key={i} className="die-face w-12 h-12 flex items-center justify-center text-xl font-bold opacity-30">
+                <div key={i} className="die-face w-12 h-12 flex items-center justify-center text-lg opacity-30">
                   ?
                 </div>
               ) : (
-                <Die key={i} value={v} held={held[i]} onClick={() => toggleHold(i)} />
+                <Die key={i} value={v} held={held[i]} onClick={() => toggleHold(i)} size="w-12 h-12" />
               )
             )}
           </div>
@@ -100,7 +107,9 @@ export default function PokerDice({ state, players, you, send }) {
         <RevealPanel result={state.last_result} players={players} />
       )}
 
-      {state.phase === "revealed" && you.is_host && (
+      {gameOver && <ResultsPanel state={state} players={players} you={you} send={send} />}
+
+      {state.phase === "revealed" && !gameOver && you.is_host && (
         <div className="text-center">
           <button
             onClick={() => send({ type: "next_round" })}
@@ -131,12 +140,7 @@ function RevealPanel({ result, players }) {
               </div>
               <div className="flex gap-1 mb-1">
                 {dice.map((v, i) => (
-                  <div
-                    key={i}
-                    className="die-face w-9 h-9 flex items-center justify-center text-base font-bold"
-                  >
-                    {FACE_LABEL[v]}
-                  </div>
+                  <Die key={i} value={v} size="w-9 h-9" />
                 ))}
               </div>
               <div className="text-amber-100/60 text-xs">{result.scores[pid].category}</div>
@@ -144,6 +148,43 @@ function RevealPanel({ result, players }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function ResultsPanel({ state, players, you, send }) {
+  const ranked = [...state.players].sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <p className="text-amber-100 text-xl">Game ended</p>
+      <div className="bg-black/30 rounded-xl p-4 w-full max-w-sm">
+        <table className="w-full text-amber-100 text-sm">
+          <thead>
+            <tr className="text-amber-100/50 text-left">
+              <th className="pb-2">Player</th>
+              <th className="pb-2 text-center">Wins</th>
+              <th className="pb-2 text-center">Losses</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ranked.map((p) => (
+              <tr key={p.id}>
+                <td className="py-1">{nameOf(players, p.id)}</td>
+                <td className="py-1 text-center">{p.wins}</td>
+                <td className="py-1 text-center">{p.losses}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {you.is_host && (
+        <button
+          onClick={() => send({ type: "back_to_lobby" })}
+          className="bg-chip-red hover:bg-chip-redDark transition text-white font-semibold px-4 py-2 rounded-lg"
+        >
+          Back to Game Picker
+        </button>
+      )}
     </div>
   );
 }
