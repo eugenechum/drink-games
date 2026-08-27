@@ -7,27 +7,41 @@ const PIP_POSITIONS = {
   6: [0, 2, 3, 5, 6, 8],
 };
 
+const DOT_SIZE = {
+  "w-9 h-9": "w-3 h-3",
+  "w-11 h-11": "w-3.5 h-3.5",
+  "w-12 h-12": "w-3.5 h-3.5",
+  "w-14 h-14": "w-4 h-4",
+  "w-16 h-16": "w-5 h-5",
+};
+
 export default function Die({ value, hidden, held, onClick, size = "w-9 h-9" }) {
+  const dot = DOT_SIZE[size] || "w-3 h-3";
   return (
     <button
       type="button"
       disabled={!onClick}
       onClick={onClick}
-      className={`die-face ${size} p-1.5 ${held ? "ring-4 ring-chip-red" : ""} ${
-        onClick ? "cursor-pointer" : "cursor-default"
-      }`}
+      className={`die-face relative ${size} transition-transform ${
+        held ? "bg-chip-red/25 ring-4 ring-chip-red scale-110" : ""
+      } ${onClick ? "cursor-pointer" : "cursor-default"}`}
     >
       {hidden ? (
-        <span className="w-full h-full flex items-center justify-center text-lg font-bold">?</span>
+        <span className="absolute inset-0 flex items-center justify-center text-lg font-bold">?</span>
       ) : (
-        <span className="grid grid-cols-3 grid-rows-3 w-full h-full">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <span key={i} className="flex items-center justify-center">
-              {(PIP_POSITIONS[value] || []).includes(i) && (
-                <span className="w-[22%] h-[22%] rounded-full bg-[#1a1a1a]" />
-              )}
-            </span>
-          ))}
+        <span className="absolute inset-0 grid grid-cols-3 grid-rows-3 place-items-center p-1">
+          {Array.from({ length: 9 }).map((_, i) =>
+            (PIP_POSITIONS[value] || []).includes(i) ? (
+              <span key={i} className={`${dot} rounded-full bg-[#1a1a1a]`} />
+            ) : (
+              <span key={i} />
+            )
+          )}
+        </span>
+      )}
+      {held && (
+        <span className="absolute -top-2 -right-2 bg-chip-red text-white text-[11px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">
+          ✓
         </span>
       )}
     </button>

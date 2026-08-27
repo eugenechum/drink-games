@@ -64,14 +64,14 @@ export default function PokerDice({ state, players, you, send }) {
 
       {state.phase === "rolling" && (
         <div className="flex flex-col items-center gap-4">
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             {state.your_dice.map((v, i) =>
               rollsUsed === 0 ? (
-                <div key={i} className="die-face w-12 h-12 flex items-center justify-center text-lg opacity-30">
+                <div key={i} className="die-face w-16 h-16 flex items-center justify-center text-lg opacity-30">
                   ?
                 </div>
               ) : (
-                <Die key={i} value={v} held={held[i]} onClick={() => toggleHold(i)} size="w-12 h-12" />
+                <Die key={i} value={v} held={held[i]} onClick={() => toggleHold(i)} size="w-16 h-16" />
               )
             )}
           </div>
@@ -138,9 +138,9 @@ function RevealPanel({ result, players }) {
               <div className="text-amber-100 text-sm mb-1">
                 {nameOf(players, pid)} {isWinner && "🏆"} {isLoser && "💧"}
               </div>
-              <div className="flex gap-1 mb-1">
+              <div className="flex gap-2 mb-1">
                 {dice.map((v, i) => (
-                  <Die key={i} value={v} size="w-9 h-9" />
+                  <Die key={i} value={v} size="w-12 h-12" />
                 ))}
               </div>
               <div className="text-amber-100/60 text-xs">{result.scores[pid].category}</div>

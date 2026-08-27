@@ -55,7 +55,7 @@ export default function LiarsDice({ state, players, you, send }) {
                 </div>
                 <div className="flex gap-1">
                   {Array.from({ length: p.dice_count }).map((_, i) => (
-                    <Die key={i} hidden />
+                    <Die key={i} hidden size="w-11 h-11" />
                   ))}
                   {p.dice_count === 0 && <span className="text-amber-100/30 text-xs">out</span>}
                 </div>
@@ -77,9 +77,9 @@ export default function LiarsDice({ state, players, you, send }) {
 
           <div className="flex flex-col items-center gap-2">
             <p className="text-amber-100/70 text-sm">Your dice</p>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               {state.your_dice.map((v, i) => (
-                <Die key={i} value={v} />
+                <Die key={i} value={v} size="w-14 h-14" />
               ))}
             </div>
           </div>
@@ -171,9 +171,9 @@ function RevealPanel({ result, players }) {
         {Object.entries(result.reveal).map(([pid, dice]) => (
           <div key={pid} className="text-center">
             <div className="text-amber-100/70 text-xs mb-1">{nameOf(players, pid)}</div>
-            <div className="flex gap-1">
+            <div className="flex gap-2">
               {dice.map((v, i) => (
-                <Die key={i} value={v} />
+                <Die key={i} value={v} size="w-11 h-11" />
               ))}
             </div>
           </div>
