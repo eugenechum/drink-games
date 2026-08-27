@@ -11,7 +11,7 @@ function Card({ label, size = "normal" }) {
   );
 }
 
-export default function Holdem({ state, players, you, send }) {
+export default function Holdem({ state, players, you, send, error }) {
   const [raiseTo, setRaiseTo] = useState("");
   const isBetting = ["preflop", "flop", "turn", "river"].includes(state.phase);
   const isYourTurn = isBetting && state.current_turn === you.id;
@@ -95,26 +95,31 @@ export default function Holdem({ state, players, you, send }) {
             {toCall === 0 ? "Check" : `Call ${toCall}`}
           </button>
           {maxRaise > state.current_bet && (
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                placeholder={`min ${minRaiseTo}`}
-                value={raiseTo}
-                onChange={(e) => setRaiseTo(e.target.value)}
-                className="w-24 rounded px-2 py-2 bg-black/30 border border-amber-100/30 text-amber-100 placeholder:text-amber-100/40"
-              />
-              <button
-                onClick={raise}
-                className="bg-chip-red hover:bg-chip-redDark transition text-white font-semibold px-4 py-2 rounded-lg"
-              >
-                Raise
-              </button>
-              <button
-                onClick={() => act({ type: "raise", to: maxRaise })}
-                className="bg-black/50 hover:bg-black/70 border border-amber-100/40 transition text-amber-100 font-semibold px-4 py-2 rounded-lg"
-              >
-                All In
-              </button>
+            <div className="flex flex-col items-center gap-1">
+              {error && <p className="text-chip-red text-xs font-semibold">{error}</p>}
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  placeholder={`min ${minRaiseTo}`}
+                  value={raiseTo}
+                  onChange={(e) => setRaiseTo(e.target.value)}
+                  className={`w-24 rounded px-2 py-2 bg-black/30 border text-amber-100 placeholder:text-amber-100/40 ${
+                    error ? "border-chip-red" : "border-amber-100/30"
+                  }`}
+                />
+                <button
+                  onClick={raise}
+                  className="bg-chip-red hover:bg-chip-redDark transition text-white font-semibold px-4 py-2 rounded-lg"
+                >
+                  Raise
+                </button>
+                <button
+                  onClick={() => act({ type: "raise", to: maxRaise })}
+                  className="bg-black/50 hover:bg-black/70 border border-amber-100/40 transition text-amber-100 font-semibold px-4 py-2 rounded-lg"
+                >
+                  All In
+                </button>
+              </div>
             </div>
           )}
         </div>

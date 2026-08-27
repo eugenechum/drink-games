@@ -67,11 +67,19 @@ export default function PokerDice({ state, players, you, send }) {
           <div className="flex gap-3">
             {state.your_dice.map((v, i) =>
               rollsUsed === 0 ? (
-                <div key={i} className="die-face w-14 h-14 flex items-center justify-center text-lg opacity-30">
-                  ?
+                <div key={i} className="flex flex-col items-center gap-1">
+                  <div className="die-face w-14 h-14 flex items-center justify-center text-lg opacity-30">
+                    ?
+                  </div>
+                  <span className="h-4" />
                 </div>
               ) : (
-                <Die key={i} value={v} held={held[i]} onClick={() => toggleHold(i)} size="w-14 h-14" />
+                <div key={i} className="flex flex-col items-center gap-1">
+                  <Die value={v} held={held[i]} onClick={() => toggleHold(i)} size="w-14 h-14" />
+                  <span className={`h-4 text-[11px] font-bold ${held[i] ? "text-chip-red" : "text-transparent"}`}>
+                    HELD
+                  </span>
+                </div>
               )
             )}
           </div>

@@ -61,7 +61,9 @@ export default function Room() {
       {gameType === "poker_dice" && (
         <PokerDice state={state.game} players={players} you={you} send={send} />
       )}
-      {gameType === "holdem" && <Holdem state={state.game} players={players} you={you} send={send} />}
+      {gameType === "holdem" && (
+        <Holdem state={state.game} players={players} you={you} send={send} error={error} />
+      )}
     </div>
   );
 }
