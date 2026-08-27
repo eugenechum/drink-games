@@ -35,7 +35,11 @@ export default function Die({ value, hidden, held, onClick, size = "w-9 h-9" }) 
         <span className="absolute inset-0 grid grid-cols-3 grid-rows-3 place-items-center p-1">
           {Array.from({ length: 9 }).map((_, i) =>
             (PIP_POSITIONS[value] || []).includes(i) ? (
-              <span key={i} className={`${dot} rounded-full bg-[#1a1a1a]`} />
+              <span
+                key={i}
+                className={`${dot} rounded-full`}
+                style={{ backgroundColor: value === 1 ? "#b3122c" : "#1a1a1a" }}
+              />
             ) : (
               <span key={i} />
             )
