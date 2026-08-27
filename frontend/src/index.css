@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: radial-gradient(ellipse at center, #0f4a37 0%, #082c21 70%, #051a14 100%);
+  min-height: 100vh;
+  color: #f3ede1;
+}
+
+.felt-table {
+  background: radial-gradient(ellipse at center, #125239 0%, #0b3d2e 60%, #082c21 100%);
+  border: 10px solid #1a1a1a;
+  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.card-face {
+  background: #f3ede1;
+  color: #1a1a1a;
+  border-radius: 0.4rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.die-face {
+  background: #f3ede1;
+  color: #1a1a1a;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
