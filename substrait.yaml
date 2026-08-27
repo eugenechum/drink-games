@@ -4,3 +4,7 @@ description: >
   the host starts a round of Liar's Dice, Poker Dice, or Texas Hold'em on a
   shared casino-styled table. For small groups playing drinking games together
   in person. No accounts and no persistence — rooms live only while active.
+
+# Skill/plugin version this app was last deployed with — stamped by
+# /substrait:deploy; do not edit by hand.
+scaffold_version: 2026.08.11.220000
